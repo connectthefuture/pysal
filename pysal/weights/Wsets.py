@@ -7,7 +7,8 @@ __author__ = "Sergio J. Rey <srey@asu.edu>, Charles Schmidt <schmidtc@gmail.com>
 import pysal
 import copy
 from scipy.sparse import isspmatrix_csr
-from numpy import ones
+from numpy import ones, apply_along_axis
+from numpy import array as nparray
 
 __all__ = ['w_union', 'w_intersection', 'w_difference',
            'w_symmetric_difference', 'w_subset', 'w_clip']
@@ -327,6 +328,21 @@ def w_symmetric_difference(w1, w2, w_shape='all', constrained=True, silent_islan
 
     return pysal.W(neighbors, silent_island_warning=silent_island_warning)
 
+
+def w_subsetF(w1, ids, outSP=False, silent_island_warning=False):
+    '''
+    Fast implementation of `w_subset` relying on sparse structures
+
+    Currently it is about 3x *slower* than the original `w_subset`
+    '''
+    mapper = w1.id2i
+    ids_i = [mapper[id] for id in ids]
+    newW = w1.sparse.tocsc()[:, ids_i]
+    newW = newW.tocsr()[ids_i, :]
+    newW = pysal.WSP(newW, ids)
+    if not outSP:
+        newW = pysal.weights.WSP2W(newW, silent_island_warning=silent_island_warning)
+    return newW
 
 def w_subset(w1, ids, silent_island_warning=False):
     """Returns a binary weights object, w, that includes only those
