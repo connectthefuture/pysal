@@ -203,28 +203,26 @@ def setup_ax(polyCos_list, ax=None):
     '''
     if not ax:
         ax = plt.axes()
-    # Determine bboxes of new axes
-    #xlim = [np.inf, -np.inf]
-    #ylim = [np.inf, -np.inf]
-    #for polyCo in polyCos_list:
-    #    axs = polyCo.get_axes()
-    #    xmin, xmax = axs.get_xlim()
-    #    ymin, ymax = axs.get_ylim()
-    #    if xmin < xlim[0]:
-    #        xlim[0] = xmin
-    #    if xmax > xlim[1]:
-    #        xlim[1] = xmax
-    #    if ymin < ylim[0]:
-    #        ylim[0] = ymin
-    #    if ymax > ylim[1]:
-    #        ylim[1] = ymax
-    #ax.set_xlim(xlim)
-    #ax.set_ylim(ylim)
-    # Resize bbox of each coll and add it to axes
+
+    xlim = [np.inf, -np.inf]
+    ylim = [np.inf, -np.inf]
     for polyCo in polyCos_list:
         ax.add_collection(polyCo)
-        polyCo.get_axes().set_xlim(ax.get_xlim())
-        polyCo.get_axes().set_ylim(ax.get_ylim())
+        polyCo.axes.set_xlim(ax.get_xlim())
+        polyCo.axes.set_ylim(ax.get_ylim())
+        xmin, xmax = polyCo.axes.get_xlim()
+        ymin, ymax = polyCo.axes.get_ylim()
+        #print(xmin, ymin, xmax, ymax)
+        if xmin < xlim[0]:
+            xlim[0] = xmin
+        if xmax > xlim[1]:
+            xlim[1] = xmax
+        if ymin < ylim[0]:
+            ylim[0] = ymin
+        if ymax > ylim[1]:
+            ylim[1] = ymax
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
     ax.set_frame_on(False)
     ax.axes.get_yaxis().set_visible(False)
     ax.axes.get_xaxis().set_visible(False)
@@ -531,21 +529,17 @@ def plot_poly_lines(shp_link,  savein=None, poly_col='none'):
                       Face color of polygons
     '''
     fig = plt.figure()
-    ax = fig.add_subplot(111)
     shp = ps.open(shp_link)
     patchco = map_poly_shp(shp)
     patchco.set_facecolor('none')
     patchco.set_edgecolor('0.8')
-    #ax = setup_ax([patchco], ax)
-    ax.add_collection(patchco)
-    ax.set_frame_on(False)
-    ax.axes.get_yaxis().set_visible(False)
-    ax.axes.get_xaxis().set_visible(False)
+    ax = setup_ax([patchco])
     fig.add_axes(ax)
 
     if savein:
         plt.savefig(savein)
     else:
+        print('callng plt.show()')
         plt.show()
     return None
 
