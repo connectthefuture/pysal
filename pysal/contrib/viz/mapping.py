@@ -181,7 +181,7 @@ def map_poly_shp(shp, which='all', bbox=None):
 
 # Mid-level pieces
 
-def setup_ax(polyCos_list, ax=None):
+def setup_ax(polyCos_list, bboxs, ax=None):
     '''
     Generate an Axes object for a list of collections
     ...
@@ -191,6 +191,9 @@ def setup_ax(polyCos_list, ax=None):
     polyCos_list: list
                   List of Matplotlib collections (e.g. an object from
                   map_poly_shp)
+    bboxs       : list
+                  List of lists, each containing the bounding box of the
+                  respective polyCo, expressed as [xmin, ymin, xmax, ymax]
     ax          : AxesSubplot
                   (Optional) Pre-existing axes to which append the collections
                   and setup
@@ -204,25 +207,15 @@ def setup_ax(polyCos_list, ax=None):
     if not ax:
         ax = plt.axes()
 
-    xlim = [np.inf, -np.inf]
-    ylim = [np.inf, -np.inf]
-    for polyCo in polyCos_list:
+    for polyCo, bbox in zip(polyCos_list, bboxs):
         ax.add_collection(polyCo)
-        polyCo.axes.set_xlim(ax.get_xlim())
-        polyCo.axes.set_ylim(ax.get_ylim())
-        xmin, xmax = polyCo.axes.get_xlim()
-        ymin, ymax = polyCo.axes.get_ylim()
-        #print(xmin, ymin, xmax, ymax)
-        if xmin < xlim[0]:
-            xlim[0] = xmin
-        if xmax > xlim[1]:
-            xlim[1] = xmax
-        if ymin < ylim[0]:
-            ylim[0] = ymin
-        if ymax > ylim[1]:
-            ylim[1] = ymax
-    ax.set_xlim(xlim)
-    ax.set_ylim(ylim)
+        polyCo.axes.set_xlim((bbox[0], bbox[2]))
+        polyCo.axes.set_ylim((bbox[1], bbox[3]))
+    abboxs = np.array(bboxs)
+    ax.set_xlim((abboxs[:, 0].min(), \
+                 abboxs[:, 2].max()))
+    ax.set_ylim((abboxs[:, 1].min(), \
+                 abboxs[:, 3].max()))
     ax.set_frame_on(False)
     ax.axes.get_yaxis().set_visible(False)
     ax.axes.get_xaxis().set_visible(False)
@@ -533,7 +526,7 @@ def plot_poly_lines(shp_link,  savein=None, poly_col='none'):
     patchco = map_poly_shp(shp)
     patchco.set_facecolor('none')
     patchco.set_edgecolor('0.8')
-    ax = setup_ax([patchco])
+    ax = setup_ax([patchco], [shp.bbox])
     fig.add_axes(ax)
 
     if savein:
@@ -636,7 +629,7 @@ def plot_choropleth(shp_link, values, type, k=5, cmap=None,
     map_obj.set_alpha(alpha)
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
-    ax = setup_ax([map_obj], ax)
+    ax = setup_ax([map_obj], [shp.bbox], ax)
     if title:
         ax.set_title(title)
     if type=='quantiles' or type=='fisher_jenks' or type=='equal_interval':
@@ -713,7 +706,7 @@ def plot_lisa_cluster(shp_link, lisa, p_thres=0.01, shp_type='poly',
     # Figure
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
-    ax = setup_ax([lisa_obj], ax)
+    ax = setup_ax([lisa_obj], [shp.bbox], ax)
     # Legend
     if legend:
         boxes, labels = lisa_legend_components(lisa, p_thres)
@@ -793,4 +786,5 @@ if __name__ == '__main__':
     lisa = ps.Moran_Local(values, w, permutations=999)
     _ = plot_lisa_cluster(shp_link, lisa)
     #_ = plot_choropleth(shp_link, values, 'fisher_jenks')
+
 
